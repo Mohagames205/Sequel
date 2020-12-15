@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Mohamed205\Sequelmodel;
+namespace Mohamed205\Sequel\model;
 
 
 use Mohamed205\Sequel\Hooker;
@@ -10,11 +10,14 @@ use Mohamed205\Sequel\model\ModelRegistrar;
 abstract class Model
 {
 
-    public static function where($tables, $condition)
+    private $tableName;
+
+    public static function where($tables)
     {
         $className = static::class;
         $modelReflection = new \ReflectionClass($className);
-        $tableName = $modelReflection->getShortName();
+        $modelClass = new $className();
+        $tableName = $className->tableName ?? strtolower($modelReflection->getShortName());
 
         $main = ModelRegistrar::getRegisteredModels()->key($className);
 
@@ -26,7 +29,7 @@ abstract class Model
         {
             foreach ($tables as $tableName => $tableCondition)
             {
-                $query .= "$tableName = :$tableName";
+                $query .= " $tableName = :$tableName";
             }
 
             $stmt = $database->prepare($query);
@@ -37,17 +40,25 @@ abstract class Model
             }
 
             $res = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
-            // TODO
 
-            $modelClass = new $className();
-            foreach ($res as $column)
+            if(!$res) return null;
+
+            foreach ($res as $column => $value)
             {
-                $modelClass->{$column} = $res;
+                $modelClass->{$column} = $value;
             }
 
             return $modelClass;
-
         }
+    }
+
+    public function insert()
+    {
+
+    }
+
+    public static function all()
+    {
 
     }
 

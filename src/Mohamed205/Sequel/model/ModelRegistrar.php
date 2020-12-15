@@ -21,6 +21,7 @@ class ModelRegistrar
 
     public static function register(string $className, Plugin $plugin)
     {
+        // TODO check if class actually exists
         if(!self::$registeredModels->append($plugin, $className)){
             throw new \Exception("Model is already registered");
         }

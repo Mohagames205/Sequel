@@ -17,7 +17,6 @@ class Hooker
 
     /**
      * @var PluginMap
-     *
      */
     private $databases;
 
