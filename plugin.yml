@@ -1,0 +1,6 @@
+---
+name: Sequel
+version: 0.0.1
+main: Mohamed205\Sequel\Sequel
+api: 3.16.1
+...
