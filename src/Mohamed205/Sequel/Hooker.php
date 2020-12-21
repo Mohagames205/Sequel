@@ -17,13 +17,13 @@ class Hooker
 
     /**
      * @var PluginMap
-     *
      */
     private $databases;
 
     public function __construct()
     {
         $this->databases = new PluginMap();
+        self::setInstance($this);
     }
 
     public function hookDatabase(PluginBase $plugin, SQLite3 $database)
@@ -33,7 +33,7 @@ class Hooker
         }
     }
 
-    public function getDatabase(Plugin $plugin)
+    public function getDatabase(Plugin $plugin) : SQLite3
     {
         return $this->databases->value($plugin);
     }
