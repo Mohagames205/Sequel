@@ -6,13 +6,14 @@ namespace Mohamed205\Sequel\model;
 
 use Mohamed205\Sequel\Hooker;
 use Mohamed205\Sequel\model\ModelRegistrar;
+use Mohamed205\Sequel\query\Builder;
 
 abstract class Model
 {
 
-    private $tableName;
+    protected $tableName;
 
-    public static function where($tables)
+    public static function wherregerge($tables)
     {
         $className = static::class;
         $modelReflection = new \ReflectionClass($className);
@@ -25,13 +26,16 @@ abstract class Model
         $database = Hooker::getInstance()->getDatabase($main);
 
         $query = "SELECT * FROM $tableName WHERE";
+        $conditionList = [];
         if(is_array($tables))
         {
             foreach ($tables as $tableName => $tableCondition)
             {
-                $query .= " $tableName = :$tableName";
+                $conditionList[] = " $tableName = :$tableName";
             }
 
+            $conditionQuery = join(' AND', $conditionList);
+            $query .= $conditionQuery;
             $stmt = $database->prepare($query);
 
             foreach ($tables as $tableName => $tableCondition)
@@ -50,6 +54,21 @@ abstract class Model
 
             return $modelClass;
         }
+    }
+
+    public static function __callStatic(string $name , array $arguments)
+    {
+        return (new static)->$name(...$arguments);
+    }
+
+    public function __call(string $name, array $arguments)
+    {
+        return $this->initializeBuilder()->$name(...$arguments);
+    }
+
+    public function initializeBuilder() : Builder
+    {
+        return new Builder($this);
     }
 
     public function insert()
