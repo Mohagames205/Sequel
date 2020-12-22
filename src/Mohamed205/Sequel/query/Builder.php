@@ -13,6 +13,8 @@ class Builder
 
     private $conditions;
 
+    private $resultSet;
+
     private $operators = [
         "=", "!=", "<", ">", "<=", ">="
     ];
@@ -52,16 +54,6 @@ class Builder
         return !in_array($operator, $this->operators);
     }
 
-
-    public function pushWhere($column, $boolean, $method = 'where')
-    {
-        foreach($column as $key => $value)
-        {
-            $this->$method($key, '=', $value, $boolean);
-        }
-        return $this;
-    }
-
     public function firstOrFail()
     {
         return $this->executeQuery()[0];
@@ -78,15 +70,7 @@ class Builder
         $shortName = $reflectionClass->getShortName();
         $query = "SELECT * FROM $shortName WHERE";
 
-        $main = ModelRegistrar::getRegisteredModels()->key(get_class($this->model));
-
-
-        /** @var \SQLite3 $database */
-        $database = Hooker::getInstance()->getDatabase($main);
-
-
         // TODO: DIT WERKEND MAKEN
-        var_dump($this->conditions);
         $i = 0;
         foreach ($this->conditions as $condition)
         {
@@ -96,11 +80,11 @@ class Builder
             $i++;
         }
 
-        $stmt = $database->prepare($query);
+        $stmt = $this->model->getConnection()->prepare($query);
         $i = 1;
         foreach ($this->conditions as $condition)
         {
-            $stmt->bindParam( $i, $condition["value"]);
+            $stmt->bindParam($i, $condition["value"]);
             $i++;
         }
 
@@ -114,10 +98,90 @@ class Builder
             foreach ($row as $column => $value) {
                 $modelBuilder->{$column} = $value;
             }
+            $modelBuilder->setFilled();
             $results[] = $modelBuilder;
         }
 
         return $results;
+    }
+
+    public function update()
+    {
+
+    }
+
+
+    public function pushWhere($column, $boolean, $method = 'where')
+    {
+        foreach($column as $key => $value)
+        {
+            $this->$method($key, '=', $value, $boolean);
+        }
+        return $this;
+    }
+
+    public function create($columns = [])
+    {
+        foreach ($columns as $key => $value) {
+
+            $this->model->{$key} = $value;
+        }
+        $this->model->save();
+    }
+
+    public function saveModel()
+    {
+        if(!$this->model->isFilled())
+        {
+            return $this->createNew();
+        }
+        return $this->updateCurrent();
+    }
+
+    // TODO
+    public function updateCurrent()
+    {
+        $tableName = (new \ReflectionClass($this->model))->getShortName();
+        $properties = get_object_vars($this->model);
+
+        $tableList = array_keys($properties);
+        $valueList = array_values($properties);
+
+        $tableString = implode(", ", $tableList);
+        $questionMarkList = array_fill(0, count($valueList), "?");
+        $query = "UPDATE $tableName SET ";
+        $stmt = $this->model->getConnection()->prepare($query);
+
+        $i = 1;
+        foreach ($valueList as $value)
+        {
+            $stmt->bindParam($i, $valueList[$i - 1]);
+            $i++;
+        }
+        return $stmt->execute();
+
+    }
+
+    public function createNew()
+    {
+        $tableName = (new \ReflectionClass($this->model))->getShortName();
+        $properties = get_object_vars($this->model);
+
+        $tableList = array_keys($properties);
+        $valueList = array_values($properties);
+
+        $tableString = implode(", ", $tableList);
+        $questionMarkList = array_fill(0, count($valueList), "?");
+        $query = "INSERT INTO $tableName ($tableString) values(" . implode(", ", $questionMarkList).")";
+        $stmt = $this->model->getConnection()->prepare($query);
+
+        $i = 1;
+        foreach ($valueList as $value)
+        {
+            $stmt->bindParam($i, $valueList[$i - 1]);
+            $i++;
+        }
+        return $stmt->execute();
     }
 
     public function getPrevValue(array $array, int $currentIndex)

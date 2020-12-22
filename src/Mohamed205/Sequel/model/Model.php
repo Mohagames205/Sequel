@@ -10,51 +10,9 @@ use Mohamed205\Sequel\query\Builder;
 
 abstract class Model
 {
-
     protected $tableName;
 
-    public static function wherregerge($tables)
-    {
-        $className = static::class;
-        $modelReflection = new \ReflectionClass($className);
-        $modelClass = new $className();
-        $tableName = $className->tableName ?? strtolower($modelReflection->getShortName());
-
-        $main = ModelRegistrar::getRegisteredModels()->key($className);
-
-        /** @var \SQLite3 $database */
-        $database = Hooker::getInstance()->getDatabase($main);
-
-        $query = "SELECT * FROM $tableName WHERE";
-        $conditionList = [];
-        if(is_array($tables))
-        {
-            foreach ($tables as $tableName => $tableCondition)
-            {
-                $conditionList[] = " $tableName = :$tableName";
-            }
-
-            $conditionQuery = join(' AND', $conditionList);
-            $query .= $conditionQuery;
-            $stmt = $database->prepare($query);
-
-            foreach ($tables as $tableName => $tableCondition)
-            {
-                $stmt->bindParam($tableName, $tableCondition);
-            }
-
-            $res = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
-
-            if(!$res) return null;
-
-            foreach ($res as $column => $value)
-            {
-                $modelClass->{$column} = $value;
-            }
-
-            return $modelClass;
-        }
-    }
+    protected $isFilled;
 
     public static function __callStatic(string $name , array $arguments)
     {
@@ -71,14 +29,30 @@ abstract class Model
         return new Builder($this);
     }
 
-    public function insert()
+    public function __set(string $name , $value)
     {
-
+        $this->{$name} = $value;
     }
 
-    public static function all()
+    public function save()
     {
+        return $this->initializeBuilder()->saveModel();
+    }
 
+    public function isFilled() : bool
+    {
+        return $this->isFilled;
+    }
+
+    public function setFilled(bool $filled = true)
+    {
+        $this->isFilled = $filled;
+    }
+
+    public function getConnection() : \SQLite3
+    {
+        $main = ModelRegistrar::getRegisteredModels()->key(get_class($this));
+        return Hooker::getInstance()->getDatabase($main);
     }
 
 }
