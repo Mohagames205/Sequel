@@ -3,7 +3,6 @@
 
 namespace Mohamed205\Sequel\map;
 
-
 use pocketmine\plugin\Plugin;
 
 class PluginMap
