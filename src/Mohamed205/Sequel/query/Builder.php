@@ -54,9 +54,14 @@ class Builder
         return !in_array($operator, $this->operators);
     }
 
+    public function firstOrNull()
+    {
+        return $this->executeQuery()[0] ?? null;
+    }
+
     public function firstOrFail()
     {
-        return $this->executeQuery()[0];
+        return $this->executeQuery()[0] ?? null;
     }
 
     public function all(): array
@@ -108,6 +113,23 @@ class Builder
     public function update()
     {
 
+    }
+
+    public function delete()
+    {
+
+    }
+
+    public function deleteModel()
+    {
+        if($this->model->isFilled())
+        {
+            $tableName = (new \ReflectionClass($this->model))->getShortName();
+            $id = $this->model->id;
+            $stmt = $this->model->getConnection()->prepare("DELETE FROM $tableName WHERE id = :id");
+            $stmt->bindParam("id", $id);
+            return $stmt->execute();
+        }
     }
 
 

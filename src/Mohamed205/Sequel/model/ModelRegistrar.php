@@ -27,6 +27,14 @@ class ModelRegistrar
         }
     }
 
+    public static function registerMultiple(array $classNames, Plugin $plugin)
+    {
+        foreach ($classNames as $className)
+        {
+            self::register($className, $plugin);
+        }
+    }
+
     public static function getRegisteredModels()
     {
         return self::$registeredModels;

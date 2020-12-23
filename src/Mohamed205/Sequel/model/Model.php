@@ -7,6 +7,7 @@ namespace Mohamed205\Sequel\model;
 use Mohamed205\Sequel\Hooker;
 use Mohamed205\Sequel\model\ModelRegistrar;
 use Mohamed205\Sequel\query\Builder;
+use mohamed205\TDBPin\model\PinRequest;
 
 abstract class Model
 {
@@ -39,6 +40,11 @@ abstract class Model
         return $this->initializeBuilder()->saveModel();
     }
 
+    public function delete()
+    {
+        return $this->initializeBuilder()->deleteModel();
+    }
+
     public function isFilled() : bool
     {
         return $this->isFilled;
@@ -53,6 +59,22 @@ abstract class Model
     {
         $main = ModelRegistrar::getRegisteredModels()->key(get_class($this));
         return Hooker::getInstance()->getDatabase($main);
+    }
+
+    public function hasOne($modelClass) : Model
+    {
+        $childReflection = new \ReflectionClass($this);
+        $shortName = $childReflection->getShortName();
+        $idField = $shortName . "_" . "id";
+
+        if(!$this->isFilled()) throw new \Exception("Non filled model cannot be used to fetch data.");
+
+        return $modelClass::where([$idField => $this->id]);
+    }
+
+    public function belongsTo($modelClass) : Model
+    {
+
     }
 
 }
